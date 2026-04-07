@@ -14,6 +14,9 @@ function getConnectionString(): string {
   try {
     const parsed = new URL(url);
     parsed.searchParams.delete('schema');
+    // Evitar que pg sobrescriba `ssl` desde el connection string.
+    parsed.searchParams.delete('sslmode');
+    parsed.searchParams.delete('uselibpqcompat');
     return parsed.toString();
   } catch {
     // Si no se puede parsear, devolver la URL tal cual
@@ -21,25 +24,20 @@ function getConnectionString(): string {
   }
 }
 
-function getPoolSslConfig(connectionString: string): pg.PoolConfig['ssl'] | undefined {
+function getPoolSslConfig(): pg.PoolConfig['ssl'] | undefined {
   // Control explícito por variable de entorno.
   // Útil en hosts donde la cadena TLS incluye certificados intermedios no confiables.
-  if (process.env.PGSSL_REJECT_UNAUTHORIZED === 'false') {
+  const rejectUnauthorizedEnv = process.env.PGSSL_REJECT_UNAUTHORIZED?.toLowerCase();
+  if (rejectUnauthorizedEnv === 'false' || rejectUnauthorizedEnv === '0' || rejectUnauthorizedEnv === 'no') {
     return { rejectUnauthorized: false };
   }
+  if (rejectUnauthorizedEnv === 'true' || rejectUnauthorizedEnv === '1' || rejectUnauthorizedEnv === 'yes') {
+    return { rejectUnauthorized: true };
+  }
 
-  // Soporte para sslmode en el URL (ej: sslmode=no-verify).
-  try {
-    const parsed = new URL(connectionString);
-    const sslMode = parsed.searchParams.get('sslmode')?.toLowerCase();
-    if (sslMode === 'no-verify') {
-      return { rejectUnauthorized: false };
-    }
-    if (sslMode === 'require' || sslMode === 'verify-ca' || sslMode === 'verify-full') {
-      return { rejectUnauthorized: true };
-    }
-  } catch {
-    // Ignorar y dejar que pg use su comportamiento por defecto.
+  // En producción forzamos TLS; en local dejamos defaults para localhost.
+  if (process.env.NODE_ENV === 'production') {
+    return { rejectUnauthorized: true };
   }
 
   return undefined;
@@ -47,7 +45,7 @@ function getPoolSslConfig(connectionString: string): pg.PoolConfig['ssl'] | unde
 
 function createPrismaClient() {
   const connectionString = getConnectionString();
-  const ssl = getPoolSslConfig(connectionString);
+  const ssl = getPoolSslConfig();
   const pool = new pg.Pool({
     connectionString,
     ...(ssl ? { ssl } : {}),
