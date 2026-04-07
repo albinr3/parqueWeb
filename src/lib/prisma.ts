@@ -21,9 +21,37 @@ function getConnectionString(): string {
   }
 }
 
+function getPoolSslConfig(connectionString: string): pg.PoolConfig['ssl'] | undefined {
+  // Control explícito por variable de entorno.
+  // Útil en hosts donde la cadena TLS incluye certificados intermedios no confiables.
+  if (process.env.PGSSL_REJECT_UNAUTHORIZED === 'false') {
+    return { rejectUnauthorized: false };
+  }
+
+  // Soporte para sslmode en el URL (ej: sslmode=no-verify).
+  try {
+    const parsed = new URL(connectionString);
+    const sslMode = parsed.searchParams.get('sslmode')?.toLowerCase();
+    if (sslMode === 'no-verify') {
+      return { rejectUnauthorized: false };
+    }
+    if (sslMode === 'require' || sslMode === 'verify-ca' || sslMode === 'verify-full') {
+      return { rejectUnauthorized: true };
+    }
+  } catch {
+    // Ignorar y dejar que pg use su comportamiento por defecto.
+  }
+
+  return undefined;
+}
+
 function createPrismaClient() {
   const connectionString = getConnectionString();
-  const pool = new pg.Pool({ connectionString });
+  const ssl = getPoolSslConfig(connectionString);
+  const pool = new pg.Pool({
+    connectionString,
+    ...(ssl ? { ssl } : {}),
+  });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }
