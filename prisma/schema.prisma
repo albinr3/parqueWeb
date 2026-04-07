@@ -98,7 +98,7 @@ model ShiftClosure {
 // ─── Admin Account (para NextAuth) ───
 model AdminAccount {
   id       String @id @default(cuid())
-  email    String @unique
+  username String @unique
   password String
   name     String @default("Administrador")
 }

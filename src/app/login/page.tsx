@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,13 +18,13 @@ export default function LoginPage() {
 
     try {
       const result = await signIn('credentials', {
-        email,
+        username,
         password,
         redirect: false,
       });
 
       if (result?.error) {
-        setError('Email o contraseña incorrectos');
+        setError('Usuario o contraseña incorrectos');
       } else {
         router.push('/dashboard');
       }
@@ -61,16 +61,16 @@ export default function LoginPage() {
           {error && <div className="login-error">{error}</div>}
 
           <div className="form-group">
-            <label className="form-label" htmlFor="email">
-              Correo Electrónico
+            <label className="form-label" htmlFor="username">
+              Usuario
             </label>
             <input
-              id="email"
-              type="email"
+              id="username"
+              type="text"
               className="form-input"
-              placeholder="admin@parqueobadia.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="usuario"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               autoFocus
             />

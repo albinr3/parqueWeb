@@ -13,18 +13,30 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('🌱 Iniciando seed...');
 
-  // Crear cuenta de admin por defecto
-  const adminPassword = await bcrypt.hash('admin123', 10);
+  const adminUsername = process.env.ADMIN_USERNAME ?? process.env.ADMIN_EMAIL;
+  const adminPasswordPlain = process.env.ADMIN_PASSWORD;
+
+  if (!adminUsername || !adminPasswordPlain) {
+    throw new Error(
+      'Faltan ADMIN_USERNAME (o ADMIN_EMAIL, compat) o ADMIN_PASSWORD en variables de entorno para crear la cuenta admin.'
+    );
+  }
+
+  // Crear/actualizar cuenta de admin desde variables de entorno
+  const adminPassword = await bcrypt.hash(adminPasswordPlain, 10);
   const admin = await prisma.adminAccount.upsert({
-    where: { email: 'admin@parqueobadia.com' },
-    update: {},
+    where: { username: adminUsername },
+    update: {
+      password: adminPassword,
+      name: 'Administrador',
+    },
     create: {
-      email: 'admin@parqueobadia.com',
+      username: adminUsername,
       password: adminPassword,
       name: 'Administrador',
     },
   });
-  console.log('✅ Admin creado:', admin.email);
+  console.log('✅ Admin creado:', admin.username);
 
   // Crear configuración por defecto
   const config = await prisma.parkingConfig.upsert({
@@ -106,8 +118,8 @@ async function main() {
 
   console.log('');
   console.log('🎉 Seed completado!');
-  console.log('📧 Login: admin@parqueobadia.com');
-  console.log('🔑 Password: admin123');
+  console.log(`👤 Usuario: ${adminUsername}`);
+  console.log('🔑 Password: [tomado de ADMIN_PASSWORD]');
 }
 
 main()
