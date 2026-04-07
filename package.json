@@ -4,12 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "postinstall": "prisma generate",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "seed": "npx tsx prisma/seed.ts",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:prod": "node -e \"require('dotenv').config(); const { spawnSync } = require('node:child_process'); const env = { ...process.env, DATABASE_URL: process.env.DATABASE_URL_PROD }; if (!env.DATABASE_URL) { console.error('Falta DATABASE_URL_PROD en .env o en variables de entorno'); process.exit(1); } const result = spawnSync('npx', ['prisma', 'migrate', 'deploy'], { stdio: 'inherit', shell: true, env }); process.exit(result.status ?? 1);\""
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
