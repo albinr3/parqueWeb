@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // URL manejada desde prisma.config.ts (Prisma 7+)
+}
+
+// ─── Configuración del Parqueo ───
+model ParkingConfig {
+  id             String   @id @default("main")
+  parkingName    String   @default("Parqueo Moto Badia")
+  normalRate     Int      @default(25)
+  lostTicketRate Int      @default(100)
+  shift1Start    String   @default("06:00")
+  shift1End      String   @default("14:00")
+  shift2Start    String   @default("14:00")
+  shift2End      String   @default("22:00")
+  ticketHeader   String?
+  updatedAt      DateTime @updatedAt
+}
+
+// ─── Usuarios del Sistema ───
+model User {
+  id        String         @id @default(cuid())
+  name      String
+  pin       String
+  role      UserRole       @default(EMPLOYEE)
+  active    Boolean        @default(true)
+  tickets   Ticket[]
+  closures  ShiftClosure[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  EMPLOYEE
+}
+
+// ─── Tickets de Parqueo ───
+model Ticket {
+  id            String        @id @default(cuid())
+  ticketNumber  Int           @unique
+  plate         String?
+  status        TicketStatus  @default(ACTIVE)
+  entryTime     DateTime      @default(now())
+  exitTime      DateTime?
+  amountCharged Int?
+  isLostTicket  Boolean       @default(false)
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  closureId     String?
+  closure       ShiftClosure? @relation(fields: [closureId], references: [id])
+  localId       String?       @unique
+  syncedAt      DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([ticketNumber])
+  @@index([status])
+  @@index([entryTime])
+  @@index([userId])
+}
+
+enum TicketStatus {
+  ACTIVE
+  PAID
+  LOST_PAID
+  CANCELLED
+}
+
+// ─── Cierres de Turno ───
+model ShiftClosure {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  shiftLabel    String
+  startTime     DateTime
+  endTime       DateTime @default(now())
+  totalTickets  Int
+  normalTickets Int
+  lostTickets   Int
+  totalAmount   Int
+  normalAmount  Int
+  lostAmount    Int
+  notes         String?
+  tickets       Ticket[]
+  localId       String?  @unique
+  syncedAt      DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([endTime])
+}
+
+// ─── Admin Account (para NextAuth) ───
+model AdminAccount {
+  id       String @id @default(cuid())
+  email    String @unique
+  password String
+  name     String @default("Administrador")
+}

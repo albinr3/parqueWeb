@@ -1,0 +1,77 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
+
+// GET /api/users — Listar empleados
+export async function GET() {
+  try {
+    const users = await prisma.user.findMany({
+      where: { role: 'EMPLOYEE' },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        active: true,
+        createdAt: true,
+        updatedAt: true,
+        // No incluir el PIN por seguridad
+      },
+    });
+
+    return NextResponse.json(users);
+  } catch (error) {
+    console.error('Error al listar empleados:', error);
+    return NextResponse.json(
+      { error: 'Error al listar empleados' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/users — Crear empleado
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+
+    if (!body.name || !body.pin) {
+      return NextResponse.json(
+        { error: 'Nombre y PIN son requeridos' },
+        { status: 400 }
+      );
+    }
+
+    if (body.pin.length !== 4 || !/^\d{4}$/.test(body.pin)) {
+      return NextResponse.json(
+        { error: 'El PIN debe ser de 4 dígitos' },
+        { status: 400 }
+      );
+    }
+
+    // Hashear el PIN para seguridad
+    const hashedPin = await bcrypt.hash(body.pin, 10);
+
+    const user = await prisma.user.create({
+      data: {
+        name: body.name,
+        pin: hashedPin,
+        role: 'EMPLOYEE',
+      },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        active: true,
+        createdAt: true,
+      },
+    });
+
+    return NextResponse.json(user, { status: 201 });
+  } catch (error) {
+    console.error('Error al crear empleado:', error);
+    return NextResponse.json(
+      { error: 'Error al crear empleado' },
+      { status: 500 }
+    );
+  }
+}
