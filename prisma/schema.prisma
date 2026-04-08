@@ -48,6 +48,8 @@ model Ticket {
   entryTime     DateTime      @default(now())
   exitTime      DateTime?
   amountCharged Int?
+  entryAmountCharged Int      @default(0)
+  lostExtraCharged   Int      @default(0)
   isLostTicket  Boolean       @default(false)
   userId        String
   user          User          @relation(fields: [userId], references: [id])

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { parseDateParamInTimeZone } from '@/lib/timezone';
 
 type SyncEntityType = 'ticket' | 'closure';
 type SyncAction = 'create' | 'update';
@@ -48,11 +49,49 @@ const asBoolean = (value: unknown): boolean =>
 const asDate = (value: unknown, field: string): Date => {
   const raw = asString(value);
   if (!raw) throw new Error(`Campo requerido inválido: ${field}`);
-  const parsed = new Date(raw);
+  const parsed = parseDateParamInTimeZone(raw) ?? new Date(raw);
   if (Number.isNaN(parsed.getTime())) {
     throw new Error(`Fecha inválida en ${field}`);
   }
   return parsed;
+};
+
+const normalizeTicketAmounts = ({
+  amountCharged,
+  entryAmountCharged,
+  lostExtraCharged,
+  status,
+  isLostTicket,
+}: {
+  amountCharged: number | null;
+  entryAmountCharged: number | null;
+  lostExtraCharged: number | null;
+  status: 'ACTIVE' | 'PAID' | 'LOST_PAID' | 'CANCELLED';
+  isLostTicket: boolean;
+}) => {
+  const shouldInferLost = status === 'LOST_PAID' || isLostTicket;
+  let entryAmount = Math.max(entryAmountCharged ?? 0, 0);
+  let lostExtra = Math.max(lostExtraCharged ?? 0, 0);
+
+  if (entryAmountCharged === null && amountCharged !== null && !shouldInferLost) {
+    entryAmount = Math.max(amountCharged, 0);
+  }
+
+  if (lostExtraCharged === null && amountCharged !== null && shouldInferLost) {
+    const inferredLost = Math.max(amountCharged - entryAmount, 0);
+    lostExtra = inferredLost > 0 ? inferredLost : Math.max(amountCharged, 0);
+  }
+
+  const totalAmount =
+    entryAmountCharged !== null || lostExtraCharged !== null
+      ? entryAmount + lostExtra
+      : amountCharged ?? entryAmount + lostExtra;
+
+  return {
+    amountCharged: totalAmount,
+    entryAmountCharged: entryAmount,
+    lostExtraCharged: lostExtra,
+  };
 };
 
 const resolveUserId = async (rawUserId: unknown): Promise<string> => {
@@ -172,15 +211,26 @@ const processTicketEvent = async (event: SyncEvent) => {
   const entryTime = asDate(ticket.entryTime, 'ticket.entryTime');
   const localId = asString(ticket.localId) ?? asString(ticket.id) ?? event.entityId ?? null;
   const userId = await resolveUserId(ticket.userId);
+  const status = (asString(ticket.status) ?? 'ACTIVE') as 'ACTIVE' | 'PAID' | 'LOST_PAID' | 'CANCELLED';
+  const isLostTicket = asBoolean(ticket.isLostTicket);
+  const amounts = normalizeTicketAmounts({
+    amountCharged: asNullableInt(ticket.amountCharged),
+    entryAmountCharged: asNullableInt(ticket.entryAmountCharged),
+    lostExtraCharged: asNullableInt(ticket.lostExtraCharged),
+    status,
+    isLostTicket,
+  });
 
   const createData = {
     ticketNumber,
     plate: asString(ticket.plate) ?? null,
-    status: (asString(ticket.status) ?? 'ACTIVE') as 'ACTIVE' | 'PAID' | 'LOST_PAID' | 'CANCELLED',
+    status,
     entryTime,
     exitTime: asString(ticket.exitTime) ? asDate(ticket.exitTime, 'ticket.exitTime') : null,
-    amountCharged: asNullableInt(ticket.amountCharged),
-    isLostTicket: asBoolean(ticket.isLostTicket),
+    amountCharged: amounts.amountCharged,
+    entryAmountCharged: amounts.entryAmountCharged,
+    lostExtraCharged: amounts.lostExtraCharged,
+    isLostTicket,
     userId,
     closureId: asString(ticket.closureId) ?? null,
     localId,
@@ -193,6 +243,8 @@ const processTicketEvent = async (event: SyncEvent) => {
     entryTime: createData.entryTime,
     exitTime: createData.exitTime,
     amountCharged: createData.amountCharged,
+    entryAmountCharged: createData.entryAmountCharged,
+    lostExtraCharged: createData.lostExtraCharged,
     isLostTicket: createData.isLostTicket,
     userId: createData.userId,
     closureId: createData.closureId,

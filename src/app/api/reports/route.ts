@@ -1,25 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { DEFAULT_TIMEZONE, getDayBoundsUtc } from '@/lib/timezone';
 
 // GET /api/reports — Obtener reportes del dashboard
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const dateStr = searchParams.get('date');
-
-    // Fecha del reporte (hoy por defecto)
-    const targetDate = dateStr ? new Date(dateStr) : new Date();
-    const startOfDay = new Date(targetDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(targetDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    const { startOfDay, endOfDay, date } = getDayBoundsUtc(dateStr, DEFAULT_TIMEZONE);
 
     // Consultas paralelas para el resumen del día
     const [
       totalMotosHoy,
       motosActivas,
-      ticketsPagados,
-      ticketsPerdidos,
+      cobrosEntradaHoy,
+      recargosPerdidoHoy,
       cierresHoy,
       ultimosTickets,
     ] = await Promise.all([
@@ -33,23 +28,22 @@ export async function GET(request: NextRequest) {
       prisma.ticket.count({
         where: { status: 'ACTIVE' },
       }),
-      // Tickets pagados hoy (normales)
+      // Cobro normal: se registra al crear ticket
       prisma.ticket.aggregate({
         where: {
-          exitTime: { gte: startOfDay, lte: endOfDay },
-          status: 'PAID',
+          entryTime: { gte: startOfDay, lte: endOfDay },
         },
         _count: true,
-        _sum: { amountCharged: true },
+        _sum: { entryAmountCharged: true },
       }),
-      // Tickets perdidos pagados hoy
+      // Recargo por ticket perdido: se registra al salir
       prisma.ticket.aggregate({
         where: {
           exitTime: { gte: startOfDay, lte: endOfDay },
-          status: 'LOST_PAID',
+          lostExtraCharged: { gt: 0 },
         },
         _count: true,
-        _sum: { amountCharged: true },
+        _sum: { lostExtraCharged: true },
       }),
       // Cierres de hoy
       prisma.shiftClosure.findMany({
@@ -75,19 +69,19 @@ export async function GET(request: NextRequest) {
     ]);
 
     const totalRecaudado =
-      (ticketsPagados._sum.amountCharged || 0) +
-      (ticketsPerdidos._sum.amountCharged || 0);
+      (cobrosEntradaHoy._sum.entryAmountCharged || 0) +
+      (recargosPerdidoHoy._sum.lostExtraCharged || 0);
 
     return NextResponse.json({
-      date: targetDate.toISOString().split('T')[0],
+      date,
       kpis: {
         totalMotos: totalMotosHoy,
         motosActivas,
         totalRecaudado,
-        ticketsNormales: ticketsPagados._count,
-        montoNormales: ticketsPagados._sum.amountCharged || 0,
-        ticketsPerdidos: ticketsPerdidos._count,
-        montoPerdidos: ticketsPerdidos._sum.amountCharged || 0,
+        ticketsNormales: cobrosEntradaHoy._count,
+        montoNormales: cobrosEntradaHoy._sum.entryAmountCharged || 0,
+        ticketsPerdidos: recargosPerdidoHoy._count,
+        montoPerdidos: recargosPerdidoHoy._sum.lostExtraCharged || 0,
       },
       cierres: cierresHoy,
       ultimosTickets,

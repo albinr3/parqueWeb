@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { parseDateParamInTimeZone } from '@/lib/timezone';
 
 // GET /api/closures — Listar cierres de turno
 export async function GET(request: NextRequest) {
@@ -15,11 +16,25 @@ export async function GET(request: NextRequest) {
 
     if (dateFrom || dateTo) {
       where.endTime = {};
-      if (dateFrom) (where.endTime as Record<string, unknown>).gte = new Date(dateFrom);
+      if (dateFrom) {
+        const parsedFrom = parseDateParamInTimeZone(dateFrom);
+        if (!parsedFrom) {
+          return NextResponse.json(
+            { error: 'dateFrom inválida. Use formato ISO o YYYY-MM-DD' },
+            { status: 400 }
+          );
+        }
+        (where.endTime as Record<string, unknown>).gte = parsedFrom;
+      }
       if (dateTo) {
-        const end = new Date(dateTo);
-        end.setHours(23, 59, 59, 999);
-        (where.endTime as Record<string, unknown>).lte = end;
+        const parsedTo = parseDateParamInTimeZone(dateTo, { endOfDayForDateOnly: true });
+        if (!parsedTo) {
+          return NextResponse.json(
+            { error: 'dateTo inválida. Use formato ISO o YYYY-MM-DD' },
+            { status: 400 }
+          );
+        }
+        (where.endTime as Record<string, unknown>).lte = parsedTo;
       }
     }
 
@@ -46,13 +61,31 @@ export async function GET(request: NextRequest) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const startTime =
+      typeof body.startTime === 'string' ? parseDateParamInTimeZone(body.startTime) : null;
+    const endTime =
+      typeof body.endTime === 'string' ? parseDateParamInTimeZone(body.endTime) : new Date();
+
+    if (!startTime) {
+      return NextResponse.json(
+        { error: 'startTime inválida. Use formato ISO o YYYY-MM-DD' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof body.endTime === 'string' && !endTime) {
+      return NextResponse.json(
+        { error: 'endTime inválida. Use formato ISO o YYYY-MM-DD' },
+        { status: 400 }
+      );
+    }
 
     const closure = await prisma.shiftClosure.create({
       data: {
         userId: body.userId,
         shiftLabel: body.shiftLabel,
-        startTime: new Date(body.startTime),
-        endTime: body.endTime ? new Date(body.endTime) : new Date(),
+        startTime,
+        endTime: endTime ?? new Date(),
         totalTickets: body.totalTickets,
         normalTickets: body.normalTickets,
         lostTickets: body.lostTickets,
