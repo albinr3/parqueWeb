@@ -124,6 +124,8 @@ a:hover {
 .app-layout {
   display: flex;
   min-height: 100vh;
+  background: var(--dark-900);
+  color: var(--dark-100);
 }
 
 .main-content {
@@ -138,6 +140,57 @@ a:hover {
   padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
+}
+
+/* Tema claro solo para dashboard */
+.app-layout[data-theme='light'] {
+  --dark-50: #111827;
+  --dark-100: #1f2937;
+  --dark-200: #374151;
+  --dark-300: #6b7280;
+  --dark-400: #9ca3af;
+  --dark-500: #cbd5e1;
+  --dark-600: #e2e8f0;
+  --dark-700: #f1f5f9;
+  --dark-800: #ffffff;
+  --dark-900: #f8fafc;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 20px 44px rgba(15, 23, 42, 0.12);
+}
+
+.app-layout[data-theme='light'] .sidebar {
+  border-right: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.app-layout[data-theme='light'] .sidebar-logo {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.app-layout[data-theme='light'] .sidebar-footer {
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.app-layout[data-theme='light'] .header {
+  background: rgba(248, 250, 252, 0.9);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.app-layout[data-theme='light'] .card,
+.app-layout[data-theme='light'] .stat-card,
+.app-layout[data-theme='light'] .filters-bar,
+.app-layout[data-theme='light'] .table-container,
+.app-layout[data-theme='light'] .pagination-btn,
+.app-layout[data-theme='light'] .form-input,
+.app-layout[data-theme='light'] .btn-ghost {
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+.app-layout[data-theme='light'] .nav-item:hover,
+.app-layout[data-theme='light'] .btn-ghost:hover,
+.app-layout[data-theme='light'] .table tbody tr:hover,
+.app-layout[data-theme='light'] .pagination-btn:hover {
+  background: rgba(15, 23, 42, 0.05);
 }
 
 /* ═══════════════════════════════════════════════════════════

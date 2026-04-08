@@ -13,6 +13,8 @@ import {
   LogOut,
   Menu,
   X,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 const navItems = [
@@ -30,6 +32,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   // Fecha se calcula solo en el cliente para evitar hydration mismatch
   const [today, setToday] = useState('');
 
@@ -44,8 +47,23 @@ export default function DashboardLayout({
     );
   }, []);
 
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('dashboard-theme');
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      setTheme(savedTheme);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('dashboard-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((currentTheme) => (currentTheme === 'dark' ? 'light' : 'dark'));
+  };
+
   return (
-    <div className="app-layout">
+    <div className="app-layout" data-theme={theme}>
       {/* Overlay para móvil */}
       {sidebarOpen && (
         <div
@@ -137,6 +155,16 @@ export default function DashboardLayout({
           <div className="header-right">
             <span className="header-date">{today}</span>
             <button
+              type="button"
+              className="btn btn-ghost btn-sm theme-toggle-btn"
+              onClick={toggleTheme}
+              aria-label={`Cambiar a modo ${theme === 'dark' ? 'claro' : 'oscuro'}`}
+              title={`Cambiar a modo ${theme === 'dark' ? 'claro' : 'oscuro'}`}
+            >
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              <span>{theme === 'dark' ? 'Claro' : 'Oscuro'}</span>
+            </button>
+            <button
               className="btn btn-ghost btn-sm"
               onClick={() => signOut({ callbackUrl: '/login' })}
             >
@@ -153,6 +181,7 @@ export default function DashboardLayout({
       <style>{`
         @media (max-width: 768px) {
           #menu-toggle { display: flex !important; }
+          .theme-toggle-btn span { display: none; }
         }
       `}</style>
     </div>
