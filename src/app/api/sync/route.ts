@@ -141,7 +141,7 @@ const extractSyncEvents = (body: unknown): SyncEvent[] => {
 
   if (Array.isArray(body.tickets)) {
     legacyEvents.push(
-      ...body.tickets.filter(isRecord).map((ticket, index) => ({
+      ...body.tickets.filter(isRecord).map<SyncEvent>((ticket, index) => ({
         id: asString(ticket.id) ?? asString(ticket.localId) ?? `ticket-${index}`,
         entityType: 'ticket' as const,
         entityId: asString(ticket.id) ?? asString(ticket.localId) ?? undefined,
@@ -153,7 +153,7 @@ const extractSyncEvents = (body: unknown): SyncEvent[] => {
 
   if (Array.isArray(body.closures)) {
     legacyEvents.push(
-      ...body.closures.filter(isRecord).map((closure, index) => ({
+      ...body.closures.filter(isRecord).map<SyncEvent>((closure, index) => ({
         id: asString(closure.id) ?? asString(closure.localId) ?? `closure-${index}`,
         entityType: 'closure' as const,
         entityId: asString(closure.id) ?? asString(closure.localId) ?? undefined,
@@ -313,4 +313,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
