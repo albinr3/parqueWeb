@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, RotateCcw } from 'lucide-react';
+import { Save, RotateCcw, Trash2 } from 'lucide-react';
 
 interface Config {
   parkingName: string;
@@ -105,6 +105,7 @@ export default function ConfiguracionPage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resettingDb, setResettingDb] = useState(false);
   const [toast, setToast] = useState<{ type: string; message: string } | null>(null);
 
   useEffect(() => {
@@ -164,6 +165,39 @@ export default function ConfiguracionPage() {
       shift2End: '22:00',
       ticketHeader: '',
     });
+  };
+
+  const handleResetDatabase = async () => {
+    const confirmReset = window.confirm(
+      'Esto eliminará tickets, cierres y empleados. El admin se conserva. ¿Deseas continuar?'
+    );
+    if (!confirmReset) return;
+
+    const confirmationWord = window.prompt(
+      'Escribe BLANQUEAR para confirmar que deseas iniciar desde 0:'
+    );
+    if (confirmationWord !== 'BLANQUEAR') {
+      showToast('error', 'Operación cancelada');
+      return;
+    }
+
+    setResettingDb(true);
+    try {
+      const res = await fetch('/api/reset', { method: 'POST' });
+      const json = await res.json();
+
+      if (!res.ok) {
+        showToast('error', json.error || 'No se pudo blanquear la base de datos');
+        return;
+      }
+
+      showToast('success', 'Base de datos blanqueada correctamente');
+      await fetchConfig();
+    } catch {
+      showToast('error', 'Error de conexión');
+    } finally {
+      setResettingDb(false);
+    }
   };
 
   if (loading) {
@@ -323,6 +357,33 @@ export default function ConfiguracionPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="card" style={{ borderColor: 'rgba(239, 68, 68, 0.35)' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--danger)', marginBottom: 12 }}>
+            Zona de Riesgo
+          </h3>
+          <p style={{ color: 'var(--dark-300)', marginBottom: 16 }}>
+            Borra toda la data operativa para comenzar desde cero: tickets, cierres y empleados.
+          </p>
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={handleResetDatabase}
+            disabled={resettingDb}
+          >
+            {resettingDb ? (
+              <>
+                <span className="spinner" />
+                Blanqueando...
+              </>
+            ) : (
+              <>
+                <Trash2 size={18} />
+                Blanquear Base de Datos
+              </>
+            )}
+          </button>
         </div>
 
         {/* Botón guardar */}

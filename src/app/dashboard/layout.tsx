@@ -32,27 +32,17 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  // Fecha se calcula solo en el cliente para evitar hydration mismatch
-  const [today, setToday] = useState('');
-
-  useEffect(() => {
-    setToday(
-      new Date().toLocaleDateString('es-DO', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    );
-  }, []);
-
-  useEffect(() => {
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window === 'undefined') return 'light';
     const savedTheme = localStorage.getItem('dashboard-theme');
-    if (savedTheme === 'light' || savedTheme === 'dark') {
-      setTheme(savedTheme);
-    }
-  }, []);
+    return savedTheme === 'dark' || savedTheme === 'light' ? savedTheme : 'light';
+  });
+  const today = new Date().toLocaleDateString('es-DO', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
   useEffect(() => {
     localStorage.setItem('dashboard-theme', theme);
@@ -153,7 +143,7 @@ export default function DashboardLayout({
             </h2>
           </div>
           <div className="header-right">
-            <span className="header-date">{today}</span>
+            <span className="header-date" suppressHydrationWarning>{today}</span>
             <button
               type="button"
               className="btn btn-ghost btn-sm theme-toggle-btn"
