@@ -3,8 +3,11 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
 // GET /api/users — Listar empleados
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const includePinHash = searchParams.get('includePinHash') === '1';
+
     const users = await prisma.user.findMany({
       where: { role: 'EMPLOYEE' },
       orderBy: { createdAt: 'desc' },
@@ -15,9 +18,21 @@ export async function GET() {
         active: true,
         createdAt: true,
         updatedAt: true,
-        // No incluir el PIN por seguridad
+        ...(includePinHash ? { pin: true } : {}),
       },
     });
+
+    if (includePinHash) {
+      return NextResponse.json(
+        users.map((user) => {
+          const { pin, ...safeUser } = user;
+          return {
+            ...safeUser,
+            pinHash: pin,
+          };
+        })
+      );
+    }
 
     return NextResponse.json(users);
   } catch (error) {
