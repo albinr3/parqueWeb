@@ -8,7 +8,7 @@ import {
   ParkingCircle,
   RefreshCw,
 } from 'lucide-react';
-import { formatDateTime, formatCurrency, translateStatus, statusColor } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 
 interface KPIs {
   totalMotos: number;
@@ -91,7 +91,7 @@ export default function DashboardPage() {
   return (
     <div>
       {/* Encabezado con botón de refrescar */}
-      <div className="flex-between" style={{ marginBottom: 24 }}>
+      <div className="page-header">
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--dark-50)' }}>
             Resumen del Día
@@ -100,10 +100,12 @@ export default function DashboardPage() {
             Vista general de la operación de hoy
           </p>
         </div>
-        <button className="btn btn-ghost" onClick={fetchData}>
-          <RefreshCw size={18} />
-          Actualizar
-        </button>
+        <div className="page-header-actions">
+          <button className="btn btn-ghost" onClick={fetchData}>
+            <RefreshCw size={18} />
+            Actualizar
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}

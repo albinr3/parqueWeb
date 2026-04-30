@@ -142,6 +142,22 @@ a:hover {
   margin: 0 auto;
 }
 
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 /* Tema claro solo para dashboard */
 .app-layout[data-theme='light'] {
   --dark-50: #111827;
@@ -591,6 +607,7 @@ select.form-input {
 
 .table {
   width: 100%;
+  min-width: 760px;
   border-collapse: collapse;
   font-size: 0.9rem;
 }
@@ -608,12 +625,14 @@ select.form-input {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
 }
 
 .table td {
   padding: 12px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   color: var(--dark-100);
+  white-space: nowrap;
 }
 
 .table tbody tr {
@@ -786,6 +805,53 @@ select.form-input {
 
 .filters-bar .form-input {
   min-width: 160px;
+}
+
+.compact-input {
+  width: 120px;
+}
+
+.time-picker {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.time-picker .form-input {
+  text-align: center;
+}
+
+.time-picker-hour,
+.time-picker-minute {
+  width: 75px;
+}
+
+.time-picker-period {
+  width: 80px;
+}
+
+.employee-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.employee-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.closure-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1051,6 +1117,19 @@ select.form-input {
 
   .header {
     left: 0;
+    padding: 0 12px;
+  }
+
+  .header-title {
+    font-size: 1rem;
+  }
+
+  .header-right {
+    gap: 8px;
+  }
+
+  .header-date {
+    display: none;
   }
 
   .grid-stats {
@@ -1070,8 +1149,25 @@ select.form-input {
     min-width: unset;
   }
 
+  .filters-bar .btn {
+    width: 100%;
+  }
+
   .page-content {
     padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-header-actions {
+    width: 100%;
+  }
+
+  .page-header-actions .btn {
+    width: 100%;
   }
 
   .login-card {
@@ -1084,10 +1180,30 @@ select.form-input {
     padding: 24px;
   }
 
+  .modal-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
   .table th,
   .table td {
     padding: 10px 12px;
     font-size: 0.8rem;
+  }
+
+  .employee-actions {
+    width: 100%;
+  }
+
+  .employee-actions .btn {
+    flex: 1;
+    min-width: 44px;
+  }
+
+  .time-picker .form-input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
   }
 }
 
@@ -1098,5 +1214,10 @@ select.form-input {
 
   .stat-card-value {
     font-size: 1.5rem;
+  }
+
+  .closure-card-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

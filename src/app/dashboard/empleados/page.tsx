@@ -149,7 +149,7 @@ export default function EmpleadosPage() {
 
   return (
     <div>
-      <div className="flex-between" style={{ marginBottom: 24 }}>
+      <div className="page-header">
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--dark-50)' }}>
             Empleados
@@ -158,10 +158,12 @@ export default function EmpleadosPage() {
             Gestiona los encargados del parqueo y sus PINs de acceso
           </p>
         </div>
-        <button className="btn btn-primary" onClick={openCreateModal}>
-          <Plus size={18} />
-          Nuevo Empleado
-        </button>
+        <div className="page-header-actions">
+          <button className="btn btn-primary" onClick={openCreateModal}>
+            <Plus size={18} />
+            Nuevo Empleado
+          </button>
+        </div>
       </div>
 
       {/* Lista de empleados */}
@@ -170,13 +172,8 @@ export default function EmpleadosPage() {
           {employees.map((emp) => (
             <div
               key={emp.id}
-              className="card"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                opacity: emp.active ? 1 : 0.5,
-              }}
+              className="card employee-card"
+              style={{ opacity: emp.active ? 1 : 0.5 }}
             >
               <div className="flex-gap">
                 <div
@@ -211,7 +208,7 @@ export default function EmpleadosPage() {
                 </div>
               </div>
 
-              <div className="flex-gap">
+              <div className="employee-actions">
                 <button
                   className="btn btn-ghost btn-sm"
                   onClick={() => toggleActive(emp)}

@@ -65,13 +65,15 @@ export default function CierresPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--dark-50)' }}>
-          Cierres por Turno
-        </h1>
-        <p style={{ color: 'var(--dark-400)', fontSize: '0.9rem', marginTop: 4 }}>
-          Historial de cierres de caja con totales por turno
-        </p>
+      <div className="page-header">
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--dark-50)' }}>
+            Cierres por Turno
+          </h1>
+          <p style={{ color: 'var(--dark-400)', fontSize: '0.9rem', marginTop: 4 }}>
+            Historial de cierres de caja con totales por turno
+          </p>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -121,7 +123,7 @@ export default function CierresPage() {
                 background: 'var(--primary-500)',
               }} />
 
-              <div className="flex-between" style={{ marginBottom: 16 }}>
+              <div className="closure-card-header" style={{ marginBottom: 16 }}>
                 <div className="flex-gap">
                   <span className="badge badge-primary" style={{ fontSize: '0.85rem' }}>
                     {closure.shiftLabel}

@@ -51,13 +51,12 @@ function TimePicker12h({
   };
 
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+    <div className="time-picker">
       <select
         id={id}
-        className="form-input"
+        className="form-input time-picker-hour"
         value={parsed.hour}
         onChange={(e) => handleChange('hour', e.target.value)}
-        style={{ width: 75, textAlign: 'center' }}
       >
         {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
           <option key={h} value={h}>{h}</option>
@@ -65,22 +64,19 @@ function TimePicker12h({
       </select>
       <span style={{ color: 'var(--dark-300)', fontWeight: 700, fontSize: '1.1rem' }}>:</span>
       <select
-        className="form-input"
+        className="form-input time-picker-minute"
         value={parsed.minute}
         onChange={(e) => handleChange('minute', e.target.value)}
-        style={{ width: 75, textAlign: 'center' }}
       >
         {[0, 15, 30, 45].map((m) => (
           <option key={m} value={m}>{String(m).padStart(2, '0')}</option>
         ))}
       </select>
       <select
-        className="form-input"
+        className="form-input time-picker-period"
         value={parsed.period}
         onChange={(e) => handleChange('period', e.target.value)}
         style={{
-          width: 80,
-          textAlign: 'center',
           fontWeight: 600,
           color: parsed.period === 'AM' ? 'var(--info)' : 'var(--primary-400)',
         }}
@@ -210,7 +206,7 @@ export default function ConfiguracionPage() {
 
   return (
     <div>
-      <div className="flex-between" style={{ marginBottom: 24 }}>
+      <div className="page-header">
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--dark-50)' }}>
             Configuración
@@ -219,10 +215,12 @@ export default function ConfiguracionPage() {
             Tarifas, turnos y datos del parqueo
           </p>
         </div>
-        <button className="btn btn-ghost" onClick={resetDefaults}>
-          <RotateCcw size={18} />
-          Valores por defecto
-        </button>
+        <div className="page-header-actions">
+          <button className="btn btn-ghost" onClick={resetDefaults}>
+            <RotateCcw size={18} />
+            Valores por defecto
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit}>

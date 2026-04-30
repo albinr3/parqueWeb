@@ -115,7 +115,7 @@ export default function HistorialPage() {
 
   return (
     <div>
-      <div className="flex-between" style={{ marginBottom: 24 }}>
+      <div className="page-header">
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--dark-50)' }}>
             Historial de Tickets
@@ -124,29 +124,29 @@ export default function HistorialPage() {
             Consulta y filtra todos los tickets registrados
           </p>
         </div>
-        <button className="btn btn-secondary" onClick={handleExport}>
-          <Download size={18} />
-          Exportar CSV
-        </button>
+        <div className="page-header-actions">
+          <button className="btn btn-secondary" onClick={handleExport}>
+            <Download size={18} />
+            Exportar CSV
+          </button>
+        </div>
       </div>
 
       {/* Filtros */}
       <form className="filters-bar" onSubmit={handleSearch}>
         <input
           type="number"
-          className="form-input"
+          className="form-input compact-input"
           placeholder="# Ticket"
           value={ticketNumber}
           onChange={(e) => setTicketNumber(e.target.value)}
-          style={{ width: 120 }}
         />
         <input
           type="text"
-          className="form-input"
+          className="form-input compact-input"
           placeholder="Placa"
           value={plate}
           onChange={(e) => setPlate(e.target.value)}
-          style={{ width: 120 }}
         />
         <select
           className="form-input"
