@@ -42,12 +42,34 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         user: { select: { name: true } },
-        _count: { select: { tickets: true } },
       },
       orderBy: { endTime: 'desc' },
     });
 
-    return NextResponse.json(closures);
+    const closuresWithPending = await Promise.all(
+      closures.map(async (closure) => {
+        const pendingExitTickets = await prisma.ticket.count({
+          where: {
+            userId: closure.userId,
+            entryTime: {
+              gte: closure.startTime,
+              lte: closure.endTime,
+            },
+            OR: [
+              { exitTime: null },
+              { exitTime: { gt: closure.endTime } },
+            ],
+          },
+        });
+
+        return {
+          ...closure,
+          pendingExitTickets,
+        };
+      })
+    );
+
+    return NextResponse.json(closuresWithPending);
   } catch (error) {
     console.error('Error al listar cierres:', error);
     return NextResponse.json(

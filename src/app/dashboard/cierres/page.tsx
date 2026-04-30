@@ -20,6 +20,7 @@ interface Closure {
   totalAmount: number;
   normalAmount: number;
   lostAmount: number;
+  pendingExitTickets: number;
   notes: string | null;
   user: { name: string };
 }
@@ -167,6 +168,14 @@ export default function CierresPage() {
                   </div>
                   <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--danger)' }}>
                     {closure.lostTickets}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--dark-400)', textTransform: 'uppercase', marginBottom: 4 }}>
+                    Pendientes de Salida
+                  </div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--warning)' }}>
+                    {closure.pendingExitTickets}
                   </div>
                 </div>
                 <div>
