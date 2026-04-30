@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { parseDateParamInTimeZone } from '@/lib/timezone';
+import { Prisma } from '@prisma/client';
 
 type SyncEntityType = 'ticket' | 'closure';
 type SyncAction = 'create' | 'update';
@@ -19,6 +20,12 @@ type SyncResults = {
   errors: string[];
   processedEventIds: string[];
   failedEventIds: string[];
+  failedEvents: Array<{
+    eventId: string;
+    entityType: SyncEntityType;
+    code: string;
+    message: string;
+  }>;
 };
 
 const SYSTEM_SYNC_USER_ID = 'sync-system-user';
@@ -205,6 +212,42 @@ const extractSyncEvents = (body: unknown): SyncEvent[] => {
   return legacyEvents;
 };
 
+const classifySyncError = (
+  error: unknown
+): {
+  code: string;
+  message: string;
+} => {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002'
+  ) {
+    const target = Array.isArray(error.meta?.target)
+      ? error.meta.target.map(String).join(',')
+      : String(error.meta?.target ?? '');
+
+    if (target.includes('ticketNumber')) {
+      return {
+        code: 'DUPLICATE_TICKET_NUMBER',
+        message: 'El ticketNumber ya existe en servidor',
+      };
+    }
+
+    if (target.includes('localId')) {
+      return {
+        code: 'DUPLICATE_LOCAL_ID',
+        message: 'El localId ya existe en servidor',
+      };
+    }
+  }
+
+  if (error instanceof Error) {
+    return { code: 'SYNC_EVENT_ERROR', message: error.message };
+  }
+
+  return { code: 'SYNC_EVENT_ERROR', message: 'Error desconocido' };
+};
+
 const processTicketEvent = async (event: SyncEvent) => {
   const ticket = event.payload;
   const ticketNumber = asRequiredInt(ticket.ticketNumber, 'ticket.ticketNumber');
@@ -260,11 +303,24 @@ const processTicketEvent = async (event: SyncEvent) => {
     return;
   }
 
-  await prisma.ticket.upsert({
-    where: { ticketNumber },
-    create: createData,
-    update: updateData,
+  const existing = await prisma.ticket.findFirst({
+    where: {
+      ticketNumber,
+      userId,
+      entryTime,
+    },
+    select: { id: true },
   });
+
+  if (existing) {
+    await prisma.ticket.update({
+      where: { id: existing.id },
+      data: updateData,
+    });
+    return;
+  }
+
+  await prisma.ticket.create({ data: createData });
 };
 
 const processClosureEvent = async (event: SyncEvent) => {
@@ -326,6 +382,7 @@ export async function POST(request: Request) {
       errors: [],
       processedEventIds: [],
       failedEventIds: [],
+      failedEvents: [],
     };
 
     for (const event of events) {
@@ -340,9 +397,15 @@ export async function POST(request: Request) {
 
         results.processedEventIds.push(event.id);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Error desconocido';
-        results.errors.push(`Evento ${event.id} (${event.entityType}): ${message}`);
+        const { code, message } = classifySyncError(err);
+        results.errors.push(`[${code}] Evento ${event.id} (${event.entityType}): ${message}`);
         results.failedEventIds.push(event.id);
+        results.failedEvents.push({
+          eventId: event.id,
+          entityType: event.entityType,
+          code,
+          message,
+        });
       }
     }
 
@@ -355,6 +418,7 @@ export async function POST(request: Request) {
       },
       processedEventIds: results.processedEventIds,
       failedEventIds: results.failedEventIds,
+      failedEvents: results.failedEvents,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

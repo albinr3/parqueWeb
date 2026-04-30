@@ -42,7 +42,7 @@ enum UserRole {
 // ─── Tickets de Parqueo ───
 model Ticket {
   id            String        @id @default(cuid())
-  ticketNumber  Int           @unique
+  ticketNumber  Int
   plate         String?
   status        TicketStatus  @default(ACTIVE)
   entryTime     DateTime      @default(now())
