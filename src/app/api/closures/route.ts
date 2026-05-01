@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { parseDateParamInTimeZone } from '@/lib/timezone';
+import { DEFAULT_TIMEZONE, getDayBoundsUtc, parseDateParamInTimeZone } from '@/lib/timezone';
+
+const getDateKeyInTimeZone = (date: Date, timeZone: string): string =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
 
 // GET /api/closures — Listar cierres de turno
 export async function GET(request: NextRequest) {
@@ -48,7 +56,7 @@ export async function GET(request: NextRequest) {
 
     const closuresWithPending = await Promise.all(
       closures.map(async (closure) => {
-        const pendingExitTickets = await prisma.ticket.count({
+        const pendingByShiftWindow = await prisma.ticket.count({
           where: {
             userId: closure.userId,
             entryTime: {
@@ -61,6 +69,32 @@ export async function GET(request: NextRequest) {
             ],
           },
         });
+
+        let pendingExitTickets = pendingByShiftWindow;
+
+        const shiftWindowMs = closure.endTime.getTime() - closure.startTime.getTime();
+        const hasDegenerateWindow = !Number.isFinite(shiftWindowMs) || shiftWindowMs <= 60 * 1000;
+        const shouldFallbackToDayWindow =
+          pendingByShiftWindow === 0 && hasDegenerateWindow && closure.totalTickets > 0;
+
+        if (shouldFallbackToDayWindow) {
+          const closureDate = getDateKeyInTimeZone(closure.endTime, DEFAULT_TIMEZONE);
+          const { startOfDay } = getDayBoundsUtc(closureDate, DEFAULT_TIMEZONE);
+
+          pendingExitTickets = await prisma.ticket.count({
+            where: {
+              userId: closure.userId,
+              entryTime: {
+                gte: startOfDay,
+                lte: closure.endTime,
+              },
+              OR: [
+                { exitTime: null },
+                { exitTime: { gt: closure.endTime } },
+              ],
+            },
+          });
+        }
 
         return {
           ...closure,
