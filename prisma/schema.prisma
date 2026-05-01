@@ -27,6 +27,7 @@ model User {
   name      String
   pin       String
   role      UserRole       @default(EMPLOYEE)
+  shift     EmployeeShift  @default(SHIFT_1)
   active    Boolean        @default(true)
   tickets   Ticket[]
   closures  ShiftClosure[]
@@ -37,6 +38,11 @@ model User {
 enum UserRole {
   ADMIN
   EMPLOYEE
+}
+
+enum EmployeeShift {
+  SHIFT_1
+  SHIFT_2
 }
 
 // ─── Tickets de Parqueo ───

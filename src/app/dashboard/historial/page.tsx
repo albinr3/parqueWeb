@@ -154,8 +154,8 @@ export default function HistorialPage() {
           onChange={(e) => setStatus(e.target.value)}
         >
           <option value="">Todos los estados</option>
-          <option value="ACTIVE">Activo</option>
-          <option value="PAID">Pagado</option>
+          <option value="ACTIVE">En parqueo</option>
+          <option value="PAID">Completado</option>
           <option value="LOST_PAID">Perdido</option>
           <option value="CANCELLED">Cancelado</option>
         </select>

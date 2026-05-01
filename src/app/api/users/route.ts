@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
+const VALID_SHIFTS = ['SHIFT_1', 'SHIFT_2'] as const;
+
 // GET /api/users — Listar empleados
 export async function GET(request: Request) {
   try {
@@ -15,6 +17,7 @@ export async function GET(request: Request) {
         id: true,
         name: true,
         role: true,
+        shift: true,
         active: true,
         createdAt: true,
         updatedAt: true,
@@ -49,9 +52,9 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    if (!body.name || !body.pin) {
+    if (!body.name || !body.pin || !body.shift) {
       return NextResponse.json(
-        { error: 'Nombre y PIN son requeridos' },
+        { error: 'Nombre, PIN y turno son requeridos' },
         { status: 400 }
       );
     }
@@ -59,6 +62,13 @@ export async function POST(request: Request) {
     if (body.pin.length !== 4 || !/^\d{4}$/.test(body.pin)) {
       return NextResponse.json(
         { error: 'El PIN debe ser de 4 dígitos' },
+        { status: 400 }
+      );
+    }
+
+    if (!VALID_SHIFTS.includes(body.shift)) {
+      return NextResponse.json(
+        { error: 'Turno inválido' },
         { status: 400 }
       );
     }
@@ -71,11 +81,13 @@ export async function POST(request: Request) {
         name: body.name,
         pin: hashedPin,
         role: 'EMPLOYEE',
+        shift: body.shift,
       },
       select: {
         id: true,
         name: true,
         role: true,
+        shift: true,
         active: true,
         createdAt: true,
       },

@@ -6,17 +6,32 @@ import { Plus, UserCheck, UserX, Pencil, Trash2, X } from 'lucide-react';
 interface Employee {
   id: string;
   name: string;
+  shift: 'SHIFT_1' | 'SHIFT_2';
   active: boolean;
   createdAt: string;
 }
 
+interface ParkingConfig {
+  shift1Start: string;
+  shift1End: string;
+  shift2Start: string;
+  shift2End: string;
+}
+
 export default function EmpleadosPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [config, setConfig] = useState<ParkingConfig>({
+    shift1Start: '06:00',
+    shift1End: '14:00',
+    shift2Start: '14:00',
+    shift2End: '22:00',
+  });
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formName, setFormName] = useState('');
   const [formPin, setFormPin] = useState('');
+  const [formShift, setFormShift] = useState<'SHIFT_1' | 'SHIFT_2'>('SHIFT_1');
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: string; message: string } | null>(null);
@@ -37,7 +52,23 @@ export default function EmpleadosPage() {
 
   useEffect(() => {
     fetchEmployees();
+    fetch('/api/config')
+      .then((r) => r.json())
+      .then((json) =>
+        setConfig({
+          shift1Start: json.shift1Start || '06:00',
+          shift1End: json.shift1End || '14:00',
+          shift2Start: json.shift2Start || '14:00',
+          shift2End: json.shift2End || '22:00',
+        })
+      )
+      .catch(() => {});
   }, []);
+
+  const shiftText = (shift: 'SHIFT_1' | 'SHIFT_2') =>
+    shift === 'SHIFT_1'
+      ? `Turno 1 (${config.shift1Start} - ${config.shift1End})`
+      : `Turno 2 (${config.shift2Start} - ${config.shift2End})`;
 
   const showToast = (type: string, message: string) => {
     setToast({ type, message });
@@ -48,6 +79,7 @@ export default function EmpleadosPage() {
     setEditingId(null);
     setFormName('');
     setFormPin('');
+    setFormShift('SHIFT_1');
     setFormError('');
     setShowModal(true);
   };
@@ -56,6 +88,7 @@ export default function EmpleadosPage() {
     setEditingId(emp.id);
     setFormName(emp.name);
     setFormPin('');
+    setFormShift(emp.shift);
     setFormError('');
     setShowModal(true);
   };
@@ -66,6 +99,11 @@ export default function EmpleadosPage() {
 
     if (!formName.trim()) {
       setFormError('El nombre es requerido');
+      return;
+    }
+
+    if (!formShift) {
+      setFormError('Selecciona un turno');
       return;
     }
 
@@ -84,7 +122,7 @@ export default function EmpleadosPage() {
     try {
       const url = editingId ? `/api/users/${editingId}` : '/api/users';
       const method = editingId ? 'PATCH' : 'POST';
-      const body: Record<string, string> = { name: formName.trim() };
+      const body: Record<string, string> = { name: formName.trim(), shift: formShift };
       if (formPin) body.pin = formPin;
 
       const res = await fetch(url, {
@@ -205,6 +243,9 @@ export default function EmpleadosPage() {
                       <span className="badge badge-neutral" style={{ padding: '2px 8px' }}>Inactivo</span>
                     )}
                   </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--dark-400)', marginTop: 4 }}>
+                    {shiftText(emp.shift)}
+                  </div>
                 </div>
               </div>
 
@@ -272,6 +313,21 @@ export default function EmpleadosPage() {
                     onChange={(e) => setFormName(e.target.value)}
                     autoFocus
                   />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" htmlFor="emp-shift">
+                    Turno Asignado
+                  </label>
+                  <select
+                    id="emp-shift"
+                    className="form-input"
+                    value={formShift}
+                    onChange={(e) => setFormShift(e.target.value as 'SHIFT_1' | 'SHIFT_2')}
+                  >
+                    <option value="SHIFT_1">{shiftText('SHIFT_1')}</option>
+                    <option value="SHIFT_2">{shiftText('SHIFT_2')}</option>
+                  </select>
                 </div>
 
                 <div className="form-group">

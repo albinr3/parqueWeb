@@ -24,8 +24,8 @@ export function formatCurrency(amount: number): string {
 // Traducir estado del ticket
 export function translateStatus(status: string): string {
   const map: Record<string, string> = {
-    ACTIVE: 'Activo',
-    PAID: 'Pagado',
+    ACTIVE: 'En parqueo',
+    PAID: 'Completado',
     LOST_PAID: 'Perdido',
     CANCELLED: 'Cancelado',
   };

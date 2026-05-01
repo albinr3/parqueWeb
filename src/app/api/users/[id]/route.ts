@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
+const VALID_SHIFTS = ['SHIFT_1', 'SHIFT_2'] as const;
+
 // PATCH /api/users/[id] — Actualizar empleado
 export async function PATCH(
   request: Request,
@@ -15,6 +17,15 @@ export async function PATCH(
 
     if (body.name !== undefined) updateData.name = body.name;
     if (body.active !== undefined) updateData.active = body.active;
+    if (body.shift !== undefined) {
+      if (!VALID_SHIFTS.includes(body.shift)) {
+        return NextResponse.json(
+          { error: 'Turno inválido' },
+          { status: 400 }
+        );
+      }
+      updateData.shift = body.shift;
+    }
 
     // Si se envía un nuevo PIN, hashearlo
     if (body.pin) {
@@ -34,6 +45,7 @@ export async function PATCH(
         id: true,
         name: true,
         role: true,
+        shift: true,
         active: true,
         createdAt: true,
         updatedAt: true,
