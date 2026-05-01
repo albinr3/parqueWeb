@@ -123,6 +123,17 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        <div className="stat-card stat-info">
+          <div className="stat-card-header">
+            <span className="stat-card-label">Motos Activas</span>
+            <div className="stat-card-icon icon-info">
+              <ParkingCircle size={22} />
+            </div>
+          </div>
+          <div className="stat-card-value">{kpis.motosActivas}</div>
+          <div className="stat-card-change">Actualmente en el parqueo</div>
+        </div>
+
         <div className="stat-card stat-success">
           <div className="stat-card-header">
             <span className="stat-card-label">Recaudado</span>
@@ -147,17 +158,6 @@ export default function DashboardPage() {
           <div className="stat-card-change">
             {formatCurrency(kpis.montoPerdidos)} recaudados
           </div>
-        </div>
-
-        <div className="stat-card stat-info">
-          <div className="stat-card-header">
-            <span className="stat-card-label">Motos Activas</span>
-            <div className="stat-card-icon icon-info">
-              <ParkingCircle size={22} />
-            </div>
-          </div>
-          <div className="stat-card-value">{kpis.motosActivas}</div>
-          <div className="stat-card-change">Actualmente en el parqueo</div>
         </div>
       </div>
 
